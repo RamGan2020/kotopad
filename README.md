@@ -22,12 +22,12 @@ Visual Studio Code или другой редактор кода необяза�
 Откройте терминал в папке, где должен появиться проект, и выполните:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/kotopad.git
+git clone https://github.com/RamGan2020/kotopad.git
 cd kotopad
 npm install
 ```
 
-Замените `YOUR_USERNAME` на имя владельца репозитория.
+Репозиторий проекта: [github.com/RamGan2020/kotopad](https://github.com/RamGan2020/kotopad).
 
 ### Вариант 2. Скачать ZIP-архив
 
