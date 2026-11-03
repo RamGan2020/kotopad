@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#191b17" />
+    <meta name="description" content="Котопад — 3D-игра о коте, шестидесяти секундах и очень дорогом беспорядке." />
+    <title>Котопад — 60 секунд хаоса</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐈</text></svg>" />
+  </head>
+  <body>
+    <div id="game">
+      <!-- Three.js рисует квартиру внутри этого холста. Остальные блоки ниже — интерфейс поверх игры. -->
+      <canvas id="scene" aria-label="Трёхмерная квартира"></canvas>
+      <div class="vignette"></div>
+
+      <!-- Постоянная верхняя панель: логотип, камера, звук и пауза. -->
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Котопад">
+          <span class="brand-mark">K</span>
+          <span>КОТОПАД</span>
+        </a>
+        <div class="top-actions">
+          <button class="icon-button" id="camera-button" title="Сбросить камеру" aria-label="Сбросить камеру">
+            <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          </button>
+          <button class="icon-button" id="sound-button" title="Выключить звук" aria-label="Выключить звук">
+            <svg class="sound-on" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10H4zM16 9c1.4 1.7 1.4 4.3 0 6M18.5 6.5c3 3 3 8 0 11"/></svg>
+          </button>
+          <button class="icon-button" id="pause-button" title="Пауза (Esc)" aria-label="Пауза">
+            <svg viewBox="0 0 24 24"><path d="M8 6v12M16 6v12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- HUD — игровые показатели. main.js находит их по id и обновляет текст.
+           Класс hidden скрывает блок до начала раунда. -->
+      <section class="hud hidden" id="hud">
+        <div class="damage-card">
+          <span class="eyebrow">ОБЩИЙ УЩЕРБ</span>
+          <strong id="score">0 ₽</strong>
+          <span class="score-tick" id="score-tick"></span>
+        </div>
+        <div class="timer-card" id="timer-card">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 3h6"/></svg>
+          <div><span class="eyebrow">ДО КОНЦА ХАОСА</span><strong id="timer">01:00</strong></div>
+        </div>
+        <div class="chaos-card">
+          <span class="eyebrow">УРОВЕНЬ ХАОСА</span>
+          <div class="chaos-row"><strong id="chaos-label">Домашний</strong><span id="destroyed-count">0 / 0</span></div>
+          <div class="progress-track"><div id="chaos-progress"></div></div>
+        </div>
+      </section>
+
+      <div class="combo hidden" id="combo"><span>КОМБО</span><strong id="combo-value">×2</strong><i></i></div>
+      <div class="target-hint hidden" id="target-hint"><span id="target-name">Ваза</span><strong id="target-value">2 500 ₽</strong><small>F — ударить лапой</small></div>
+      <div id="floaters" aria-hidden="true"></div>
+
+      <aside class="controls-hint hidden" id="controls-hint">
+        <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Движение</span></div>
+        <div><kbd>Shift</kbd><span>Рывок</span></div>
+        <div><kbd>Space</kbd><span>Прыжок</span></div>
+        <div><kbd>F</kbd><span>Лапа</span></div>
+      </aside>
+
+      <div class="toast hidden" id="toast"></div>
+
+      <!-- Три экрана ниже лежат поверх 3D-сцены. JavaScript переключает их классом hidden. -->
+      <section class="overlay start-overlay" id="start-overlay">
+        <div class="start-copy">
+          <div class="pill"><span></span> СИМУЛЯТОР ДОМАШНЕГО ХАОСА</div>
+          <h1>КОТО<br /><em>ПАД</em></h1>
+          <p class="lead">Ты — кот. У тебя есть <strong>60 секунд</strong>,<br />и вся квартира — твоя игрушка.</p>
+          <button class="primary-button" id="start-button"><span>УСТРОИТЬ КОТОПАД</span><svg viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></svg></button>
+          <div class="start-controls">
+            <div><span class="key-grid"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></span><p><strong>Бегать</strong><small>или стрелки</small></p></div>
+            <div><kbd class="wide-key">F</kbd><p><strong>Бить лапой</strong><small>или клик мыши</small></p></div>
+            <div><kbd class="wide-key">⇧</kbd><p><strong>Ускоряться</strong><small>для сильного удара</small></p></div>
+          </div>
+          <p class="camera-note">Вращай камеру мышью · Колёсико — масштаб</p>
+        </div>
+        <div class="start-side">
+          <div class="mission-card">
+            <span class="mission-number">01</span>
+            <div><span class="eyebrow">ТВОЯ МИССИЯ</span><h2>Разрушить.<br />Разбить. Повторить.</h2><p>Каждый предмет стоит денег. Ломай их подряд, чтобы увеличить комбо и счёт.</p></div>
+          </div>
+          <div class="tip-card"><span>!</span><p>Тяжёлая мебель ломается с разбега. Попробуй врезаться в неё на скорости.</p></div>
+        </div>
+        <footer class="start-footer"><span>НИ ОДИН НАСТОЯЩИЙ КОТ НЕ ПОСТРАДАЛ</span><span>3D · 60 СЕК · БЕСПОШИННЫЙ ХАОС</span></footer>
+      </section>
+
+      <!-- Экран паузы изначально скрыт и появляется по Esc или кнопке сверху. -->
+      <section class="overlay modal-overlay hidden" id="pause-overlay">
+        <div class="modal pause-modal">
+          <span class="eyebrow">ПЕРЕДЫШКА</span><h2>Кот притворился<br />невиноватым.</h2><p>Таймер остановлен. Хаос подождёт.</p>
+          <button class="primary-button" id="resume-button"><span>ПРОДОЛЖИТЬ</span><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
+          <button class="text-button" id="pause-restart-button">Начать заново</button>
+        </div>
+      </section>
+
+      <!-- В конце раунда finishGame() заполняет поля результата и показывает этот экран. -->
+      <section class="overlay modal-overlay hidden" id="end-overlay">
+        <div class="modal result-modal">
+          <div class="result-stamp">ВРЕМЯ ВЫШЛО</div>
+          <span class="eyebrow">АКТ О ПОНЕСЁННЫХ РАЗРУШЕНИЯХ</span>
+          <h2 id="result-title">Вот это котопад!</h2>
+          <p class="result-subtitle" id="result-subtitle">Квартира запомнит эту минуту.</p>
+          <div class="total-result"><span>ИТОГО К ВОЗМЕЩЕНИЮ</span><strong id="final-score">0 ₽</strong></div>
+          <div class="result-stats">
+            <div><strong id="final-destroyed">0</strong><span>предметов<br />уничтожено</span></div>
+            <div><strong id="final-combo">×1</strong><span>лучшее<br />комбо</span></div>
+            <div><strong id="final-rank">Котёнок</strong><span>титул<br />разрушителя</span></div>
+          </div>
+          <button class="primary-button" id="restart-button"><span>ЕЩЁ РАЗ!</span><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2-5.5L4 9M4 4v5h5"/></svg></button>
+          <p class="result-footnote">Хозяин уже едет домой. Наверное, лучше спрятаться.</p>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
